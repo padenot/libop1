@@ -4,7 +4,7 @@ A work-in-progress program to generate a drum file for an op-1
 
 # Dependencies
 - [json.h](http://github.com/nlohmann/json) (vendored)
-- libsndfile with a patch on top (http://github.com/padenot/libsndfile)
+- libsndfile with a patch on top ([here for now](http://github.com/padenot/libsndfile))
 
 # Usage
 For now, command line:
