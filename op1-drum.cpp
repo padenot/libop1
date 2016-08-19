@@ -1,10 +1,13 @@
 #include "sndfile.h"
 #include "json.hpp"
+#include "cli.hpp"
 #include <vector>
 #include <cstdlib>
 
 using namespace std;
 using json = nlohmann::json;
+
+#define DEBUG
 
 #define FATAL(str) \
   fprintf(stderr, "Fatal: %s\n", (str)); \
@@ -30,7 +33,7 @@ struct audio_file
   vector<int16_t> data;
 };
 
-void load_file(char* name, audio_file * afile)
+void load_file(const char* name, audio_file * afile)
 {
   SF_INFO info;
 
@@ -65,13 +68,29 @@ uint32_t frame_to_op1_time(uint32_t frame)
   // Maximum amount of data for a drum sample on an op-1
   const int BYTES_IN_12_SECS = 44100 * 2 * 12;
   const int OP1_DRUMKIT_END = 0x7FFFFFFE;
-  return OP1_DRUMKIT_END / BYTES_IN_12_SECS * frame;
+  return OP1_DRUMKIT_END / BYTES_IN_12_SECS * frame * sizeof(uint16_t);
 }
 
-int main(int argc, char ** argv)
+int main(int argc, const char ** argv)
 {
+  cli::Parser parser(argc, argv);
+
+  parser.help() << R"(op1-drum
+    Usage: op1-drum [options] audio-file [audio-file]...)";
+
+  auto output = parser.option("output")
+    .alias("o")
+    .description("Output file")
+    .required()
+    .getValue();
+
+  if (parser.hasErrors()) {
+    return EXIT_FAILURE;
+  }
+
+  parser.getRemainingArguments(argc, argv);
   // load all files
-  vector<audio_file> files(24);
+  vector<audio_file> files;
 
   if (argc >= 25) {
     FATAL("No more than 24 files on an op-1.");
@@ -88,19 +107,32 @@ int main(int argc, char ** argv)
 
 
   // compute start an end time
-  std::vector<int32_t> start(24);
-  std::vector<int32_t> end(24);
-  int32_t acc_start = 0;
-  int32_t acc_end = 0;
+  vector<int32_t> start;
+  vector<int32_t> end;
+  int32_t acc = 0;
+
+  start.resize(24, 0);
+  end.resize(24, 0);
+
   for (uint32_t i = 0; i < files.size(); i++) {
-    start[i] = acc_start;
-    acc_start += files[i].data.size();
-    acc_end += files[i].data.size();
-    end[i] = acc_end;
+    start[i] = acc;
+    acc += files[i].data.size();
+    end[i] = acc + 1;
   }
 
+  for (uint32_t i = files.size(); i < 24; i++) {
+    start[i] = acc;
+    end[i] = acc;
+  }
+
+  for (uint32_t i = 0; i < 24; i++) {
+    start[i] = frame_to_op1_time(start[i]);
+    end[i] = frame_to_op1_time(end[i]);
+  }
+
+
   std::vector<int> playmode;
-  for (int32_t i = 0; i < files.size(); i++) {
+  for (int32_t i = 0; i < 24; i++) {
     // playmode.push_back(4096); // playmode ->
     playmode.push_back(8192); // playmode ->|
     // playmode.push_back(20480); // playmode loop
@@ -109,7 +141,7 @@ int main(int argc, char ** argv)
   std::vector<int> direction;
   for (int32_t i = 0; i < 24; i++) {
     direction.push_back(8192); // forward
-    direction.push_back(18432); // reverse;
+    // direction.push_back(18432); // reverse;
   }
 
   std::vector<int> volume;
@@ -145,7 +177,7 @@ int main(int argc, char ** argv)
 
   j["drum_version"] = 1;
   j["type"] = "drum";
-  j["name"] = "test";
+  j["name"] = "user";
   j["octave"] = 0;
   j["pitch"] = std::vector<int>(24);
   j["start"] = start;
@@ -158,7 +190,7 @@ int main(int argc, char ** argv)
   j["fx_type"] = "cwo";
   j["fx_params"] = fx_params;
   j["lfo_active"] = false;
-  j["lfo_type"] = "bend";
+  j["lfo_type"] = "tremolo";
   j["lfo_params"] = lfo_params;
 
   string serialized = j.dump();
@@ -171,11 +203,12 @@ int main(int argc, char ** argv)
   // TODO
 
   // write aiff
+  const char * temp_file = "op1-drum-temp.aiff";
   SF_INFO info;
   info.samplerate = files[0].info.samplerate;
   info.channels = 1; // drums are mono
   info.format = SF_FORMAT_AIFF | SF_FORMAT_PCM_16 | SF_ENDIAN_BIG;
-  SNDFILE* outfile = sf_open("out.aiff", SFM_WRITE, &info);
+  SNDFILE* outfile = sf_open(temp_file, SFM_WRITE, &info);
   if (!outfile) {
     FATAL("Could not open file for writing");
   }
@@ -185,6 +218,14 @@ int main(int argc, char ** argv)
 
   for (int32_t i = 0; i < files.size(); i++) {
     sf_count_t count = sf_writef_short(outfile, &(files[i].data[0]), files[i].data.size()) ;
+    if (count != files[i].data.size()) {
+      WARN("Weird write.");
+    }
+    int16_t d = 0;
+    count = sf_writef_short(outfile, &d, 1) ;
+    if (count != 1) {
+      WARN("Weird write.");
+    }
   }
 
   int rv = sf_close(outfile);
@@ -192,14 +233,16 @@ int main(int argc, char ** argv)
     FATAL("Could not close output file.");
   }
 
+  printf("%s\n", temp_file);
+
   // reopen the file and fix the APPL string
-  FILE* f = fopen("out.aiff", "r");
+  FILE* f = fopen(temp_file, "r");
 
   fseek(f, 0, SEEK_END);
   long fsize = ftell(f);
   fseek(f, 0, SEEK_SET);
 
-  int8_t* buf = (int8_t*)malloc(fsize);
+  uint8_t* buf = (uint8_t*)malloc(fsize);
   fread(buf, fsize, 1, f);
   fclose(f);
 
@@ -268,7 +311,7 @@ int main(int argc, char ** argv)
 
   uint32_t end_json = i;
 #ifdef DEBUG
-  printf("end json index: %d\n", i);
+  printf("end json index: %zu\n", i);
 #endif
 
   uint32_t removed_char = 0;
@@ -284,7 +327,10 @@ int main(int argc, char ** argv)
   printf("'%d' '%d' '%d' '%d'\n", buf[chunk_size_index], buf[chunk_size_index+1], buf[chunk_size_index+2], buf[chunk_size_index+3]);
 #endif
 
-  int32_t chunk_size = buf[chunk_size_index + 0] << 24 | buf[chunk_size_index + 1] << 16 | buf[chunk_size_index + 2] << 8 | buf[chunk_size_index + 3];
+  int32_t chunk_size = (buf[chunk_size_index + 3] << 0)
+                     | (buf[chunk_size_index + 2] << 8)
+                     | (buf[chunk_size_index + 1] << 16)
+                     | (buf[chunk_size_index + 0] << 24);
 #ifdef DEBUG
   printf("chunk_size: %d\n", chunk_size);
 #endif
@@ -305,7 +351,7 @@ int main(int argc, char ** argv)
   buf[chunk_size_index + 3] = chunk_size;
 
   // write the new file
-  f = fopen("out_fixed.aiff", "w");
+  f = fopen(output, "w");
   if (!f) {
     FATAL("Could not open final file for writing.");
   }
@@ -313,7 +359,16 @@ int main(int argc, char ** argv)
   if (written != 1) {
     FATAL("Did not write all the data.");
   }
-  fclose(f);
+  rv = fclose(f);
+
+  if (rv) {
+    WARN("Could not close temporary file.");
+  }
+
+  rv = remove(temp_file);
+  if (rv) {
+    WARN("Could not remove temporary file.");
+  }
 
   return 0;
 }
