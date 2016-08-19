@@ -98,7 +98,7 @@ int main(int argc, const char ** argv)
   cli::Parser parser(argc, argv);
 
   parser.help() << R"(op1-drum
-    Usage: op1-drum [options] audio-file [audio-file ...]
+    Usage: op1-drum [options] audio-file [audio-file ...] -o output.aif
 
     Creates an AIFF file for use with an OP-1, with start and end marker included in the file.)";
 
@@ -165,10 +165,12 @@ int main(int argc, const char ** argv)
   vector<audio_file> files;
 
   if (argc >= 25) {
+    parser.showHelp();
     FATAL("No more than 24 files on an op-1.");
   }
 
   if (argc == 1) {
+    parser.showHelp();
     FATAL("Need some audio files as arguments.");
   }
 
