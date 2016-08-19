@@ -3,15 +3,23 @@
 #include "cli.hpp"
 #include <vector>
 #include <cstdlib>
+#include <cmath>
 
 using namespace std;
 using json = nlohmann::json;
 
-#define DEBUG
+bool g_logging_enabled = false;
+
+#define LOG(...) do {                                  \
+    if (g_logging_enabled) {                           \
+      fprintf(stderr, "%s:%d: ", __FILE__, __LINE__);  \
+      fprintf(stderr, __VA_ARGS__);                    \
+    }                                                  \
+  } while(0)
 
 #define FATAL(str) \
   fprintf(stderr, "Fatal: %s\n", (str)); \
-  abort();
+  exit(1)
 
 #define WARN(str) \
   fprintf(stderr, "Warning: %s\n", (str));
@@ -33,6 +41,22 @@ struct audio_file
   vector<int16_t> data;
 };
 
+void normalize_file(audio_file& file)
+{
+  int16_t* samples = &(file.data[0]);
+  int16_t sample_count = file.data.size();
+  int16_t max_abs = 0;
+
+  for (int i = 0; i < sample_count; i++) {
+    max_abs = max<int16_t>(abs(samples[i]), max_abs);
+  }
+  float gain = (2 << 14) / max_abs;
+
+  for (int i = 0; i < sample_count; i++) {
+    samples[i] = samples[i] * gain;
+  }
+}
+
 void load_file(const char* name, audio_file * afile)
 {
   SF_INFO info;
@@ -44,9 +68,7 @@ void load_file(const char* name, audio_file * afile)
     FATAL("Could not open file.");
   }
 
-#ifdef DEBUG
-  printf("%s - rate: %d - frame count: %lld\n", name, info.samplerate, info.frames);
-#endif
+  LOG("%s - rate: %d - frame count: %lld\n", name, info.samplerate, info.frames);
 
   size_t samples = info.frames * info.channels;
   afile->info = info;
@@ -76,13 +98,63 @@ int main(int argc, const char ** argv)
   cli::Parser parser(argc, argv);
 
   parser.help() << R"(op1-drum
-    Usage: op1-drum [options] audio-file [audio-file]...)";
+    Usage: op1-drum [options] audio-file [audio-file ...]
+
+    Creates an AIFF file for use with an OP-1, with start and end marker included in the file.)";
 
   auto output = parser.option("output")
-    .alias("o")
-    .description("Output file")
-    .required()
-    .getValue();
+                      .alias("o")
+                      .description("Output file")
+                      .required()
+                      .getValue();
+
+  auto fx_type = parser.option("fxtype")
+                       .alias("fx")
+                       .description("Effect type, one of 'cwo', 'delay', 'grid', 'nitro', 'phone', 'punch' or 'spring'.")
+                       .defaultValue("cwo")
+                       .getValue();
+
+  auto fx_on = parser.flag("fxon")
+                     .description("Whether the effect is on by default or not.")
+                     .getValue();
+
+  auto lfo_type = parser.option("lfotype")
+                        .alias("lfo")
+                        .description("LFO type, one of 'bend', 'crank', 'element', 'midi', 'random', 'tremolo', 'value'.")
+                        .defaultValue("element")
+                        .getValue();
+
+  auto lfo_on = parser.flag("lfoon")
+                     .description("Whether the LFO is on by default or not.")
+                     .getValue();
+
+  auto normalize = parser.flag("normalize")
+                         .alias("n")
+                         .description("Normalize each sample before creating the output file.")
+                         .getValue();
+
+  g_logging_enabled = parser.flag("debug")
+                            .alias("d")
+                            .description("Enabled console debug print outs.")
+                            .getValue();
+
+  vector<string> valid_effects = {
+    "cwo", "delay", "grid", "nitro", "phone", "punch", "spring"
+  };
+
+  if (find(valid_effects.begin(), valid_effects.end(), fx_type) == valid_effects.end()) {
+    parser.showHelp();
+    return EXIT_FAILURE;
+  }
+
+  vector<string> valid_lfo = {
+    "bend", "crank", "element", "midi", "random", "tremolo", "value"
+  };
+
+  if (find(valid_lfo.begin(), valid_lfo.end(), lfo_type) == valid_lfo.end()) {
+    parser.showHelp();
+    return EXIT_FAILURE;
+  }
 
   if (parser.hasErrors()) {
     return EXIT_FAILURE;
@@ -105,6 +177,11 @@ int main(int argc, const char ** argv)
     load_file(argv[i], &(files[i - 1]));
   }
 
+  if (normalize) {
+    for (uint32_t i = 0; i < files.size(); i++) {
+      normalize_file(files[i]);
+    }
+  }
 
   // compute start an end time
   vector<int32_t> start;
@@ -186,21 +263,16 @@ int main(int argc, const char ** argv)
   j["reverse"] = direction;
   j["volume"] = volume;
   j["dyna_env"] = dyna_env;
-  j["fx_active"] = false;
-  j["fx_type"] = "cwo";
+  j["fx_active"] = fx_on;
+  j["fx_type"] = fx_type;
   j["fx_params"] = fx_params;
-  j["lfo_active"] = false;
-  j["lfo_type"] = "tremolo";
+  j["lfo_active"] = lfo_on;
+  j["lfo_type"] = lfo_type;
   j["lfo_params"] = lfo_params;
 
   string serialized = j.dump();
 
-#ifdef DEBUG
-  printf("json chunk: %s\n", serialized.c_str());
-#endif
-
-  // check zero crossing
-  // TODO
+  LOG("json chunk: %s\n", serialized.c_str());
 
   // write aiff
   const char * temp_file = "op1-drum-temp.aiff";
@@ -233,8 +305,6 @@ int main(int argc, const char ** argv)
     FATAL("Could not close output file.");
   }
 
-  printf("%s\n", temp_file);
-
   // reopen the file and fix the APPL string
   FILE* f = fopen(temp_file, "r");
 
@@ -249,9 +319,6 @@ int main(int argc, const char ** argv)
   // find AAPL capture pattern
   size_t i = 0;
   while (i < fsize - 4) {
-#ifdef DEBUG
-    printf("'%c' '%c' '%c' '%c'\n", buf[i], buf[i+1], buf[i+2], buf[i+3]);
-#endif
     if (buf[i + 0] == 'A' &&
         buf[i + 1] == 'P' &&
         buf[i + 2] == 'P' &&
@@ -266,21 +333,11 @@ int main(int argc, const char ** argv)
          buf[i + 2] == 'P' &&
          buf[i + 3] == 'L');
 
-#ifdef DEBUG
-  printf("APPL => '%02X' '%02X' '%02X' '%02X'\n", buf[i], buf[i+1], buf[i+2], buf[i+3]);
-#endif
-
   i += 4;
-
-#ifdef DEBUG
-  printf("hexa chunk size: '%02X' '%02X' '%02X' '%02X'\n", buf[i], buf[i+1], buf[i+2], buf[i+3]);
-#endif
 
   uint32_t chunk_size_index = i;
 
-#ifdef DEBUG
-  printf("chunk_size_index: %d\n", chunk_size_index);
-#endif
+  LOG("chunk_size_index: %d\n", chunk_size_index);
 
   i += 4;
 
@@ -297,9 +354,6 @@ int main(int argc, const char ** argv)
 
   // capture the libsnd version string, and remove it
   while (i < fsize - 4) {
-#ifdef DEBUG
-    printf("'%c' '%c' '%c' '%c'\n", buf[i], buf[i+1], buf[i+2], buf[i+3]);
-#endif
     if (buf[i + 0] == ' ' &&
         buf[i + 1] == '(' &&
         buf[i + 2] == 'l' &&
@@ -310,9 +364,6 @@ int main(int argc, const char ** argv)
   }
 
   uint32_t end_json = i;
-#ifdef DEBUG
-  printf("end json index: %zu\n", i);
-#endif
 
   uint32_t removed_char = 0;
   while (buf[i] != ')') {
@@ -323,26 +374,18 @@ int main(int argc, const char ** argv)
   removed_char++;
   i++;
 
-#ifdef DEBUG
-  printf("'%d' '%d' '%d' '%d'\n", buf[chunk_size_index], buf[chunk_size_index+1], buf[chunk_size_index+2], buf[chunk_size_index+3]);
-#endif
-
   int32_t chunk_size = (buf[chunk_size_index + 3] << 0)
                      | (buf[chunk_size_index + 2] << 8)
                      | (buf[chunk_size_index + 1] << 16)
                      | (buf[chunk_size_index + 0] << 24);
-#ifdef DEBUG
-  printf("chunk_size: %d\n", chunk_size);
-#endif
+  LOG("APPL chunk_size: %d\n", chunk_size);
 
   // move back the data and update the chunk size
   memmove(buf + end_json, buf + end_json + removed_char, fsize - end_json - removed_char);
 
   chunk_size -= removed_char;
 
-#ifdef DEBUG
-  printf("new chunk size: %d\n", chunk_size);
-#endif
+  LOG("new chunk size: %d\n", chunk_size);
 
   // udpate the AAPL chunk size
   buf[chunk_size_index + 0] = chunk_size >> 24;
