@@ -3,8 +3,9 @@
 A work-in-progress program to generate a drum file for an op-1
 
 # Dependencies
-- [json.h](http://github.com/nlohmann/json) (vendored)
+- [json.h](https://github.com/nlohmann/json) (vendored)
 - libsndfile with a patch on top ([here for now](http://github.com/padenot/libsndfile))
+- [cli.cpp](https://github.com/KoltesDigital/cli.cpp) (vendored)
 
 # Usage
 For now, command line:
