@@ -1,6 +1,8 @@
 #include "sndfile.h"
 #include "json.hpp"
+
 #include "cli.hpp"
+#include "op1.h"
 #include <vector>
 #include <cstdlib>
 #include <cmath>
@@ -8,43 +10,8 @@
 using namespace std;
 using json = nlohmann::json;
 
-bool g_logging_enabled = false;
-
-#define LOG(...) do {                                  \
-    if (g_logging_enabled) {                           \
-      fprintf(stderr, "%s:%d: ", __FILE__, __LINE__);  \
-      fprintf(stderr, __VA_ARGS__);                    \
-    }                                                  \
-  } while(0)
-
-#define FATAL(str) \
-  fprintf(stderr, "Fatal: %s\n", (str)); \
-  exit(1)
-
-#define WARN(str) \
-  fprintf(stderr, "Warning: %s\n", (str));
-
-template<typename T>
-void PodZero(T blob)
+void normalize_buffer(int16_t * samples, size_t sample_count)
 {
-  memset(&blob, 0, sizeof(T));
-}
-
-struct audio_file
-{
-  audio_file()
-  {
-    PodZero(info);
-  }
-
-  SF_INFO info;
-  vector<int16_t> data;
-};
-
-void normalize_file(audio_file& file)
-{
-  int16_t* samples = &(file.data[0]);
-  int16_t sample_count = file.data.size();
   int16_t max_abs = 0;
 
   for (int i = 0; i < sample_count; i++) {
@@ -54,34 +21,6 @@ void normalize_file(audio_file& file)
 
   for (int i = 0; i < sample_count; i++) {
     samples[i] = samples[i] * gain;
-  }
-}
-
-void load_file(const char* name, audio_file * afile)
-{
-  SF_INFO info;
-
-  PodZero(info);
-
-  SNDFILE* file = sf_open(name, SFM_READ, &info);
-  if (!file) {
-    FATAL("Could not open file.");
-  }
-
-  LOG("%s - rate: %d - frame count: %lld\n", name, info.samplerate, info.frames);
-
-  size_t samples = info.frames * info.channels;
-  afile->info = info;
-  afile->data.resize(samples);
-
-  sf_count_t count = sf_read_short(file, &(afile->data[0]), info.frames);
-  if (count != info.frames) {
-    WARN("Unexpected number of frames.");
-  }
-
-  int rv = sf_close(file);
-  if (rv != 0) {
-    FATAL("Could not close file.");
   }
 }
 
@@ -162,7 +101,7 @@ int main(int argc, const char ** argv)
 
   parser.getRemainingArguments(argc, argv);
   // load all files
-  vector<audio_file> files;
+  vector<audio_file*> files;
 
   if (argc >= 25) {
     parser.showHelp();
@@ -175,13 +114,17 @@ int main(int argc, const char ** argv)
   }
 
   for (uint32_t i = 1; i < argc; i++) {
-    files.push_back(audio_file());
-    load_file(argv[i], &(files[i - 1]));
+    audio_file * file;
+    op1_sample_load(argv[i], &file);
+    files.push_back(file);
   }
 
   if (normalize) {
     for (uint32_t i = 0; i < files.size(); i++) {
-      normalize_file(files[i]);
+      int16_t * samples;
+      size_t sample_count;
+      op1_sample_get_data(files[i], &samples, &sample_count);
+      normalize_buffer(samples, sample_count);
     }
   }
 
@@ -194,8 +137,11 @@ int main(int argc, const char ** argv)
   end.resize(24, 0);
 
   for (uint32_t i = 0; i < files.size(); i++) {
+    size_t sample_count;
+    op1_sample_get_length(files[i], &sample_count);
+
     start[i] = acc;
-    acc += files[i].data.size();
+    acc += sample_count;
     end[i] = acc + 1;
   }
 
@@ -279,7 +225,12 @@ int main(int argc, const char ** argv)
   // write aiff
   const char * temp_file = "op1-drum-temp.aiff";
   SF_INFO info;
-  info.samplerate = files[0].info.samplerate;
+  int rate, rv;
+  rv = op1_sample_get_rate(files[0], &rate);
+  if (!rv) {
+    FATAL("Can't get rate.");
+  }
+  info.samplerate = rate;
   info.channels = 1; // drums are mono
   info.format = SF_FORMAT_AIFF | SF_FORMAT_PCM_16 | SF_ENDIAN_BIG;
   SNDFILE* outfile = sf_open(temp_file, SFM_WRITE, &info);
@@ -291,8 +242,12 @@ int main(int argc, const char ** argv)
   sf_set_string(outfile, SF_STR_SOFTWARE, serialized.c_str());
 
   for (int32_t i = 0; i < files.size(); i++) {
-    sf_count_t count = sf_writef_short(outfile, &(files[i].data[0]), files[i].data.size()) ;
-    if (count != files[i].data.size()) {
+    int16_t * samples;
+    size_t sample_count;
+    op1_sample_get_data(files[i], &samples, &sample_count);
+
+    sf_count_t count = sf_writef_short(outfile, samples, sample_count) ;
+    if (count != sample_count) {
       WARN("Weird write.");
     }
     int16_t d = 0;
@@ -302,7 +257,7 @@ int main(int argc, const char ** argv)
     }
   }
 
-  int rv = sf_close(outfile);
+  rv = sf_close(outfile);
   if (rv != 0) {
     FATAL("Could not close output file.");
   }
