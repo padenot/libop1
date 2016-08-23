@@ -1,0 +1,12 @@
+PROJECT_NAME           = libop1
+PROJECT_NUMBER         = 0.1
+OUTPUT_DIRECTORY       = doc
+JAVADOC_AUTOBRIEF      = YES
+OPTIMIZE_OUTPUT_FOR_C  = YES
+CASE_SENSE_NAMES       = NO
+SORT_MEMBER_DOCS       = NO
+QUIET                  = YES
+WARN_NO_PARAMDOC       = YES
+INPUT                  = @top_srcdir@op1.h
+GENERATE_HTML          = YES
+GENERATE_LATEX = NO

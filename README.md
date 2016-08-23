@@ -9,6 +9,10 @@ proprietary metadata.
 - [json.h](https://github.com/nlohmann/json) (vendored)
 - libsndfile with a patch on top ([here for now](http://github.com/padenot/libsndfile))
 - [cli.cpp](https://github.com/KoltesDigital/cli.cpp) (vendored)
+- CMake for building this project
+- libtool for building the custom libsndfile
+- `git` to get the modified `libsndfile`
+- `doxygen` for the documentation (optional)
 
 # Usage
 
@@ -43,6 +47,31 @@ Options:
     LFO type, one of 'bend', 'crank', 'element', 'midi', 'random', 'tremolo',
     'value'.  [default: element]
   ```
+
+```sh
+op1-dump
+  Usage: op1-drum audio-file.aif [audio-file2.aif...]
+
+  Dumps on stdout the proprietary JSON of a OP-1 drum or synth sample.
+
+Flags:
+  -help, -h, -?  Show help
+```
+
+# Building
+
+OSX or Linux for now.
+
+Run `./deps.sh`. That gets the source for the modified `libsndfile` version,
+compiles it, and puts it at the right location.
+
+Run `cmake .`, and `make`.
+
+Run `make doc` to build the documentation. It is generated in `doc`.
+
+# Installation
+
+TODO
 
 # License
 
