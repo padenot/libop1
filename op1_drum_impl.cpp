@@ -1,3 +1,4 @@
+#include <cstring>
 #include "sndfile.h"
 #include "json.hpp"
 
