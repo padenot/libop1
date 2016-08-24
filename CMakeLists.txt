@@ -6,8 +6,8 @@ set (CMAKE_CXX_STANDARD 11)
 
 project (op1-utils)
 
-include_directories(./include/)
-link_directories(./lib/)
+include_directories(./external/include/)
+link_directories(./external/lib/)
 
 add_library(op1 op1_drum_impl.cpp)
 
