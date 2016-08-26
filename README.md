@@ -1,10 +1,10 @@
-# op1-drum
+# libop1
 
 [![Travis](https://img.shields.io/travis/padenot/libop1.svg)](https://github.com/padenot/libop1)
 
-A program to generate a drum file in AIFF format for an
-[OP-1](https://www.teenageengineering.com/products/op-1), including the OP-1
-proprietary metadata.
+A library to manipulate AIFF audio files for the
+[OP-1](https://www.teenageengineering.com/products/op-1), and associated command
+lines programs.
 
 # Dependencies
 
