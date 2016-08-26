@@ -18,8 +18,8 @@ matrix:
       env: SCAN_BUILD=true
 before_install:
 - if [[ $TRAVIS_OS_NAME = "osx" ]]; then
-    - brew update;
-    - brew outdated libtool cmake || brew upgrade libtool cmake;
+    brew update;
+    brew outdated libtool cmake autogen || brew upgrade libtool cmake autogen;
   fi
 - . deps.sh
 - if [[ -n $SCAN_BUILD ]]; then
