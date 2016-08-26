@@ -1,6 +1,6 @@
 # libop1
 
-[![Travis](https://img.shields.io/travis/padenot/libop1.svg)](https://github.com/padenot/libop1)
+[![Travis](https://img.shields.io/travis/padenot/libop1.svg)](https://travis-ci.org/padenot/libop1)
 
 A library to manipulate AIFF audio files for the
 [OP-1](https://www.teenageengineering.com/products/op-1), and associated command
