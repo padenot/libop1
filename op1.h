@@ -174,6 +174,19 @@ int op1_drum_destroy(op1_drum * ctx);
  */
 int op1_drum_write(op1_drum * ctx, const char * file_name);
 
+/** Write the final audio file to a buffer. If any of `op1_drum_set_start_times`
+ * or `op1_drum_set_end_times` have been called with array that are not all
+ * zeros, start and end times will be computed and will be the start and end of
+ * each sample, with exactly one sample in between.
+ *
+ * @param ctx A pointer to a valid `op1_drum`.
+ * @param output A pointer to an array containing the output data.
+ * @param output Filled in with the length of the array.
+ *
+ * @returns an error code in case of error, OP1_SUCCESS otherwise.
+ */
+int op1_drum_write_buffer(op1_drum * ctx, uint8_t ** output, size_t * length);
+
 /** Add a sample to an `op1_drum` context.
  *
  * @param ctx A pointer to a valid `op1_drum`.

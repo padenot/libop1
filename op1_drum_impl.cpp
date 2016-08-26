@@ -283,10 +283,11 @@ int op1_drum_destroy(op1_drum * ctx)
   return OP1_SUCCESS;
 }
 
-int op1_drum_write(op1_drum * ctx, const char * file_name)
+int op1_drum_write_buffer(op1_drum * ctx, uint8_t ** output, size_t * length)
 {
   ENSURE_VALID(ctx);
-  ENSURE_VALID(file_name);
+  ENSURE_VALID(output);
+  ENSURE_VALID(length);
 
   std::array<int, 24> converted_start;
   std::array<int, 24> converted_end;
@@ -480,16 +481,36 @@ int op1_drum_write(op1_drum * ctx, const char * file_name)
   buf[chunk_size_index + 2] = chunk_size >>  8;
   buf[chunk_size_index + 3] = chunk_size;
 
+  *length = buf.size();
+  *output = new uint8_t[*length];
+
+  memcpy(*output, buf.data(), buf.size());
+
+  return OP1_SUCCESS;
+}
+
+int op1_drum_write(op1_drum * ctx, const char * file_name)
+{
+  ENSURE_VALID(ctx);
+  ENSURE_VALID(file_name);
+
+  uint8_t * data;
+  size_t length;
+
+  op1_drum_write_buffer(ctx, &data, &length);
+
   // write the new file
   FILE * f = fopen(file_name, "w");
   if (!f) {
     FATAL("Could not open final file for writing.");
   }
-  long written = fwrite(&(buf[0]), buf.size(), 1, f);
+  long written = fwrite(data, length, 1, f);
   if (written != 1) {
     FATAL("Did not write all the data.");
   }
-  rv = fclose(f);
+  int rv = fclose(f);
+
+  delete [] data;
 
   if (rv) {
     WARN("Could not close output file.");
