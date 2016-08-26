@@ -38,27 +38,7 @@ matrix:
             - clang-3.7
       env: COMPILER=clang++-3.7
 before_install:
-  . deps.sh
-  - if [[ -n $SCAN_BUILD ]]; then
-      if [[ $TRAVIS_OS_NAME = "osx" ]]; then
-        . scan-build-install.sh;
-      else
-        export SCAN_BUILD_PATH=scan-build;
-      fi
-    fi
-before_script:
-  - if [[ $TRAVIS_OS_NAME = "linux" ]]; then
-      if [ ! -z "$HOST" ]; then
-        unset CC;
-        unset CXX;
-      fi
-    fi
-  - if [[ $TRAVIS_OS_NAME = "linux" ]]; then
-      if [ -z "$COMPILER_CXX"]; then
-        export CC=$COMPILER_CC;
-        export CXX=$COMPILER_CXX;
-      fi
-    fi
+  - . deps.sh
 script:
   - cmake -DCMAKE_CXX_COMPILER=$COMPILER .
   - $SCAN_BUILD_PATH make
