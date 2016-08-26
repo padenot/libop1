@@ -4,40 +4,27 @@ sudo: required
 matrix:
     include:
     - compiler: gcc
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - g++-4.9
-      env: COMPILER=g++-4.9
-    - compiler: gcc
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - g++-5
+      os: linux
       env: COMPILER=g++-5
     - compiler: clang
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-            - llvm-toolchain-precise-3.6
-          packages:
-            - clang-3.6
-      env: COMPILER=clang++-3.6
-    - compiler: clang
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-            - llvm-toolchain-precise-3.7
-          packages:
-            - clang-3.7
+      os: linux
       env: COMPILER=clang++-3.7
+    - compiler: gcc
+      os: linux
+      env: COMPILER=clang++-3.7
+      env: SCAN_BUILD=true
+    - compiler: clang
+      os:osx
+      env: COMPILER=clang
+      env: SCAN_BUILD=true
 before_install:
+- if [[ -n $SCAN_BUILD ]]; then
+    if [[ $TRAVIS_OS_NAME = "osx" ]]; then
+      . scan-build-install.sh;
+    else
+      export SCAN_BUILD_PATH=scan-build;
+    fi
+  fi
   - . deps.sh
 script:
   - cmake -DCMAKE_CXX_COMPILER=$COMPILER .
@@ -46,9 +33,9 @@ addons:
   apt:
     sources:
       - ubuntu-toolchain-r-test
-      - llvm-toolchain-precise-3.6
+      - llvm-toolchain-precise-3.7
     packages:
       - gcc-5
       - g++-5
-      - clang-3.6
+      - clang-3.7
       - cmake
