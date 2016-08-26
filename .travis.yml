@@ -9,10 +9,9 @@ matrix:
     - compiler: clang
       os: linux
       env: COMPILER=clang++-3.7
-    - compiler: gcc
-      os: linux
-      env: COMPILER=clang++-3.7
-      env: SCAN_BUILD=true
+    - compiler: clang
+      os: osx
+      env: COMPILER=clang
     - compiler: clang
       os: osx
       env: COMPILER=clang
