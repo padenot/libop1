@@ -28,3 +28,13 @@ if(DOXYGEN_FOUND)
     )
 endif(DOXYGEN_FOUND)
 
+option(CLANG_MSAN "Enable Clang memory sanitizer" OFF)
+if (CLANG_MSAN)
+  set (CMAKE_CXX_FLAGS "-g -fsanitize=address -fno-omit-frame-pointer")
+endif()
+
+add_custom_target(asan
+  COMMAND ${CMAKE_COMMAND}
+  -DCLANG_MSAN=ON
+  -DCMAKE_CXX_COMPILER=clang++
+  -DCMAKE_C_COMPILER=clang)
