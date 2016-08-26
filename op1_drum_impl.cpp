@@ -357,55 +357,55 @@ int op1_drum_write(op1_drum * ctx, const char * file_name)
     }
   }
 
-  // write aiff
-  const char * temp_file = "op1-drum-temp.aiff";
+  SF_VIRTUAL_IO vio;
+  vio.get_filelen = vf_get_filelen;
+  vio.seek = vf_seek;
+  vio.read = vf_read;
+  vio.write = vf_write;
+  vio.tell = vf_tell;
+
+  vio_data vdata;
+  vdata.offset = 0;
+
   SF_INFO info;
   info.samplerate = rate;
   info.channels = 1; // drums are mono
   info.format = SF_FORMAT_AIFF | SF_FORMAT_PCM_16 | SF_ENDIAN_BIG;
-  SNDFILE* outfile = sf_open(temp_file, SFM_WRITE, &info);
-  if (!outfile) {
-    FATAL("Could not open file for writing");
+
+  SNDFILE* file = sf_open_virtual (&vio, SFM_WRITE, &info, &vdata);
+  if (!file) {
+    return OP1_ERROR;
   }
 
   // set string
-  sf_set_string(outfile, SF_STR_SOFTWARE, serialized.c_str());
+  sf_set_string(file, SF_STR_SOFTWARE, serialized.c_str());
 
   for (int32_t i = 0; i < ctx->audio_samples.size(); i++) {
     int16_t * samples;
     size_t sample_count;
     op1_sample_get_data(&(ctx->audio_samples[i]), &samples, &sample_count);
 
-    sf_count_t count = sf_writef_short(outfile, samples, sample_count) ;
+    sf_count_t count = sf_writef_short(file, samples, sample_count) ;
     if (count != sample_count) {
       WARN("Weird write.");
     }
     int16_t d = 0;
-    count = sf_writef_short(outfile, &d, 1) ;
+    count = sf_writef_short(file, &d, 1) ;
     if (count != 1) {
       WARN("Weird write.");
     }
   }
 
-  int rv = sf_close(outfile);
+  int rv = sf_close(file);
   if (rv != 0) {
     FATAL("Could not close output file.");
   }
 
-  // reopen the file and fix the APPL string
-  FILE* f = fopen(temp_file, "r");
-
-  fseek(f, 0, SEEK_END);
-  long fsize = ftell(f);
-  fseek(f, 0, SEEK_SET);
-
-  uint8_t* buf = (uint8_t*)malloc(fsize);
-  fread(buf, fsize, 1, f);
-  fclose(f);
+  vector<uint8_t>& buf = vdata.data;
 
   // find AAPL capture pattern
   size_t i = 0;
-  while (i < fsize - 4) {
+  while (i < buf.size() - 4) {
     if (buf[i + 0] == 'A' &&
         buf[i + 1] == 'P' &&
         buf[i + 2] == 'P' &&
@@ -440,7 +440,7 @@ int op1_drum_write(op1_drum * ctx, const char * file_name)
   buf[i + 3] = '1';
 
   // capture the libsnd version string, and remove it
-  while (i < fsize - 4) {
+  while (i < buf.size() - 4) {
     if (buf[i + 0] == ' ' &&
         buf[i + 1] == '(' &&
         buf[i + 2] == 'l' &&
@@ -468,7 +468,7 @@ int op1_drum_write(op1_drum * ctx, const char * file_name)
   LOG("APPL chunk_size: %d\n", chunk_size);
 
   // move back the data and update the chunk size
-  memmove(buf + end_json, buf + end_json + removed_char, fsize - end_json - removed_char);
+  memmove(&(buf[0]) + end_json, &(buf[0]) + end_json + removed_char, buf.size() - end_json - removed_char);
 
   chunk_size -= removed_char;
 
@@ -481,23 +481,18 @@ int op1_drum_write(op1_drum * ctx, const char * file_name)
   buf[chunk_size_index + 3] = chunk_size;
 
   // write the new file
-  f = fopen(file_name, "w");
+  FILE * f = fopen(file_name, "w");
   if (!f) {
     FATAL("Could not open final file for writing.");
   }
-  long written = fwrite(buf, fsize, 1, f);
+  long written = fwrite(&(buf[0]), buf.size(), 1, f);
   if (written != 1) {
     FATAL("Did not write all the data.");
   }
   rv = fclose(f);
 
   if (rv) {
-    WARN("Could not close temporary file.");
-  }
-
-  rv = remove(temp_file);
-  if (rv) {
-    WARN("Could not remove temporary file.");
+    WARN("Could not close output file.");
   }
   return OP1_SUCCESS;
 }
@@ -646,4 +641,3 @@ int op1_drum_set_end_times(op1_drum * ctx, int end_times[24])
 
   return OP1_SUCCESS;
 }
-
