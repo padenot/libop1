@@ -51,7 +51,7 @@ sf_count_t vf_read(void * ptr, sf_count_t count, void * user_ptr)
     count = vio->data.size() - vio->offset;
   }
 
-  memcpy (ptr, &(vio->data[0]) + vio->offset, count);
+  memcpy (ptr, vio->data.data() + vio->offset, count);
   vio->offset += count;
 
   return count ;
@@ -65,7 +65,7 @@ sf_count_t vf_write (const void * ptr, sf_count_t count, void * user_ptr)
     vio->data.resize(vio->offset + count);
   }
 
-  memcpy (&(vio->data[0]) + vio->offset, ptr, (size_t) count) ;
+  memcpy (vio->data.data() + vio->offset, ptr, count) ;
   vio->offset += count;
 
   return count;
@@ -97,7 +97,7 @@ struct op1_drum
   op1_drum()
   {
     end_times.fill(0);
-    enveloppe = { 0, 8192, 0, 8192, 0, 0, 0, 0 };
+    enveloppe = {{ 0, 8192, 0, 8192, 0, 0, 0, 0 }};
     fx_params.fill(8000);
     lfo_params.fill(16000);
     pitches.fill(OP1_PITCH_CENTER);
@@ -159,7 +159,7 @@ int op1_sample_load(const char * file_name, audio_file ** sample)
   (*sample)->info = info;
   (*sample)->data.resize(samples);
 
-  sf_count_t count = sf_read_short(file, &((*sample)->data[0]), info.frames);
+  sf_count_t count = sf_read_short(file, (*sample)->data.data(), info.frames);
   if (count != info.frames) {
     WARN("Unexpected number of frames.");
   }
@@ -205,7 +205,7 @@ int op1_sample_load_buffer(uint8_t * data, size_t length, audio_file ** sample)
   (*sample)->info = info;
   (*sample)->data.resize(samples);
 
-  sf_count_t count = sf_read_short(file, &((*sample)->data[0]), info.frames);
+  sf_count_t count = sf_read_short(file, (*sample)->data.data(), info.frames);
   if (count != info.frames) {
     WARN("Unexpected number of frames.");
   }
@@ -228,7 +228,7 @@ int op1_sample_get_data(audio_file * sample, int16_t ** data, size_t * frame_cou
     return OP1_ERROR;
   }
 
-  *data = &(sample->data[0]);
+  *data = sample->data.data();
   *frame_count = sample->data.size();
 
   return OP1_SUCCESS;
@@ -469,7 +469,9 @@ int op1_drum_write_buffer(op1_drum * ctx, uint8_t ** output, size_t * length)
   LOG("APPL chunk_size: %d\n", chunk_size);
 
   // move back the data and update the chunk size
-  memmove(&(buf[0]) + end_json, &(buf[0]) + end_json + removed_char, buf.size() - end_json - removed_char);
+  memmove(buf.data() + end_json,
+          buf.data() + end_json + removed_char,
+          buf.size() - end_json - removed_char);
 
   chunk_size -= removed_char;
 
