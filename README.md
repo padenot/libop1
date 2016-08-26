@@ -69,7 +69,9 @@ compiles it, and puts it at the right location.
 
 Run `cmake .`, and `make`.
 
-Run `make doc` to build the documentation. It is generated in `doc`.
+Run `make doc` to build the documentation. It 
+
+is generated in `doc`.
 
 # Installation
 
@@ -79,3 +81,9 @@ TODO
 
 Copyright (c) 2016 Paul Adenot
 [MIT](https://opensource.org/licenses/MIT)
+
+# Future features                                                               
+                                                                                 
+- [ ] Synth patches with loop points                                            
+- [ ] emscripten + web app                                                      
+- [ ] Windows command line utility build                                        
