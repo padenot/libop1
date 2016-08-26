@@ -26,6 +26,10 @@ before_install:
       export SCAN_BUILD_PATH=scan-build;
     fi
   fi
+- if [[ $TRAVIS_OS_NAME = "osx" ]]; then
+    - brew update
+    - brew outdated libtool cmake || brew upgrade libtool cmake
+  fi
 script:
   - cmake -DCMAKE_CXX_COMPILER=$COMPILER .
   - $SCAN_BUILD_PATH make
