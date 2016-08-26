@@ -9,12 +9,12 @@ matrix:
     - compiler: clang
       os: linux
       env: COMPILER=clang++-3.7
-    - compiler: clang
+    - compiler: clang++
       os: osx
-      env: COMPILER=clang
-    - compiler: clang
+      env: COMPILER=clang++
+    - compiler: clang++
       os: osx
-      env: COMPILER=clang
+      env: COMPILER=clang++
       env: SCAN_BUILD=true
 before_install:
 - if [[ $TRAVIS_OS_NAME = "osx" ]]; then
