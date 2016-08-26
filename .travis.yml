@@ -14,7 +14,7 @@ matrix:
       env: COMPILER=clang++-3.7
       env: SCAN_BUILD=true
     - compiler: clang
-      os:osx
+      os: osx
       env: COMPILER=clang
       env: SCAN_BUILD=true
 before_install:
