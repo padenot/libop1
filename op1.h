@@ -181,7 +181,7 @@ int op1_drum_write(op1_drum * ctx, const char * file_name);
  *
  * @param ctx A pointer to a valid `op1_drum`.
  * @param output A pointer to an array containing the output data.
- * @param output Filled in with the length of the array.
+ * @param length Filled in with the length of the array.
  *
  * @returns an error code in case of error, OP1_SUCCESS otherwise.
  */
