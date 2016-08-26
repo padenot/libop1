@@ -1,19 +1,44 @@
 language: cpp
 dist: trusty
 sudo: required
-compiler:
-- gcc
-- clang
-os:
-- linux
-- osx
-env:
-- SCAN_BUILD=true
-- SCAN_BUILD=false
-- COMPILER_CC=gcc-5
-- COMPILER_CXX=g++-5
-install: make get-deps
+matrix:
+    include:
+    - compiler: gcc
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-4.9
+      env: COMPILER=g++-4.9
+    - compiler: gcc
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-5
+      env: COMPILER=g++-5
+    - compiler: clang
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-precise-3.6
+          packages:
+            - clang-3.6
+      env: COMPILER=clang++-3.6
+    - compiler: clang
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-precise-3.7
+          packages:
+            - clang-3.7
+      env: COMPILER=clang++-3.7
 before_install:
+  . deps.sh
   - if [[ -n $SCAN_BUILD ]]; then
       if [[ $TRAVIS_OS_NAME = "osx" ]]; then
         . scan-build-install.sh;
@@ -34,8 +59,8 @@ before_script:
         export CXX=$COMPILER_CXX;
       fi
     fi
-  - cmake .
 script:
+  - cmake -DCMAKE_CXX_COMPILER=$COMPILER .
   - $SCAN_BUILD_PATH make
 addons:
   apt:
