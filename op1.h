@@ -94,6 +94,18 @@ enum OP1_PITCH {
 int op1_sample_load(const char * file_name, audio_file ** output);
 
 /**
+ * Load a sample from a buffer. All the file type supported by libsndfile are
+ * supported.
+ *
+ * @param data A buffer containing raw audio file data.
+ * @param length The size of the buffer.
+ * @param output An opaque handle to an audio file.
+ *
+ * @returns an error code in case of error, OP1_SUCCESS otherwise.
+ */
+int op1_sample_load_buffer(const uint8_t * data, size_t length, audio_file ** output);
+
+/**
  * Destroy a sample previously loaded with `op1_sample_load`.
  *
  * @see op1_sample_load

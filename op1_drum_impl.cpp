@@ -9,6 +9,78 @@ using namespace std;
 
 bool g_logging_enabled;
 
+namespace {
+
+struct vio_data {
+  size_t offset;
+  vector<uint8_t> data;
+};
+
+sf_count_t vf_get_filelen(void * user_ptr)
+{
+  vio_data * vio = reinterpret_cast<vio_data*>(user_ptr);
+  return vio->data.size();
+}
+
+sf_count_t vf_seek(sf_count_t offset, int whence, void * user_ptr)
+{
+  vio_data * vio = reinterpret_cast<vio_data*>(user_ptr);
+
+  switch (whence) {
+    case SEEK_SET :
+      vio->offset = offset ;
+      break;
+    case SEEK_CUR :
+      vio->offset = vio->offset + offset ;
+      break;
+    case SEEK_END :
+      vio->offset = vio->data.size() + offset ;
+      break;
+    default:
+      break;
+  };
+
+  return vio->offset ;
+}
+
+sf_count_t vf_read(void * ptr, sf_count_t count, void * user_ptr)
+{
+  vio_data * vio = reinterpret_cast<vio_data*>(user_ptr);
+
+  if (vio->offset + count > vio->data.size()) {
+    count = vio->data.size() - vio->offset;
+  }
+
+  memcpy (ptr, &(vio->data[0]) + vio->offset, count);
+  vio->offset += count;
+
+  return count ;
+}
+
+sf_count_t vf_write (const void * ptr, sf_count_t count, void * user_ptr)
+{
+  vio_data * vio = reinterpret_cast<vio_data*>(user_ptr);
+
+  if (vio->offset + count > vio->data.size()) {
+    vio->data.resize(vio->offset + count);
+  }
+
+  memcpy (&(vio->data[0]) + vio->offset, ptr, (size_t) count) ;
+  vio->offset += count;
+
+  return count;
+}
+
+sf_count_t vf_tell (void * user_ptr)
+{
+  vio_data * vio = reinterpret_cast<vio_data*>(user_ptr);
+
+  return vio->offset;
+}
+
+}
+
+
 struct audio_file
 {
   audio_file()
@@ -82,6 +154,52 @@ int op1_sample_load(const char * file_name, audio_file ** sample)
   }
 
   LOG("%s - rate: %d - frame count: %lld\n", file_name, info.samplerate, info.frames);
+
+  size_t samples = info.frames * info.channels;
+  (*sample)->info = info;
+  (*sample)->data.resize(samples);
+
+  sf_count_t count = sf_read_short(file, &((*sample)->data[0]), info.frames);
+  if (count != info.frames) {
+    WARN("Unexpected number of frames.");
+  }
+
+  int rv = sf_close(file);
+  if (rv != 0) {
+    return OP1_ERROR;
+  }
+
+  return OP1_SUCCESS;
+}
+
+int op1_sample_load_buffer(uint8_t * data, size_t length, audio_file ** sample)
+{
+  SF_INFO info;
+
+  ENSURE_VALID(data);
+  ENSURE_VALID(sample);
+
+  SF_VIRTUAL_IO vio ;
+  vio.get_filelen = vf_get_filelen ;
+  vio.seek = vf_seek ;
+  vio.read = vf_read ;
+  vio.write = vf_write ;
+  vio.tell = vf_tell ;
+
+  *sample = new audio_file;
+
+  PodZero(info);
+
+  vio_data vdata;
+  vdata.offset = 0;
+  vdata.data = vector<uint8_t>(data, data + length);
+
+  SNDFILE* file = sf_open_virtual (&vio, SFM_READ, &info, &vdata);
+  if (!file) {
+    return OP1_ERROR;
+  }
+
+  LOG("Buffer(%p) - rate: %d - frame count: %lld\n", data, info.samplerate, info.frames);
 
   size_t samples = info.frames * info.channels;
   (*sample)->info = info;
