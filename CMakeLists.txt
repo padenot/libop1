@@ -50,5 +50,3 @@ if(MSVC)
 else()
   add_definitions ("-Wall")
 endif()
-
-set(CMAKE_CXX_FLAGS "-stdlib=libc++")
