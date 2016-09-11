@@ -1,1 +1,16 @@
 *.WAV
+*.a
+*.aif
+*.bc
+*.js
+.DS_Store
+CMakeCache.txt
+CMakeFiles/
+a.out.js
+cmake_install.cmake
+doc/Doxyfile
+doc/html/
+op1-drum
+op1-dump
+Makefile
+external
