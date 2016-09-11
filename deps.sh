@@ -5,7 +5,8 @@ set -ex
 if [ ! -d libsndfile ]
 then
 echo "Getting modified libsndfile sources..."
-git clone https://github.com/padenot/libsndfile.git
+git submodule init
+git submodule update
 fi
 
 echo "Compiling modified libsndfile sources..."
