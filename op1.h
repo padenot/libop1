@@ -10,6 +10,10 @@
 
 #include "op1_common.h"
 
+#ifndef EMSCRIPTEN_KEEPALIVE
+#define EMSCRIPTEN_KEEPALIVE
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -91,7 +95,7 @@ enum OP1_PITCH {
  *
  * @returns an error code in case of error, OP1_SUCCESS otherwise.
  */
-int op1_sample_load(const char * file_name, audio_file ** output);
+int EMSCRIPTEN_KEEPALIVE op1_sample_load(const char * file_name, audio_file ** output);
 
 /**
  * Load a sample from a buffer. All the file type supported by libsndfile are
@@ -103,7 +107,7 @@ int op1_sample_load(const char * file_name, audio_file ** output);
  *
  * @returns an error code in case of error, OP1_SUCCESS otherwise.
  */
-int op1_sample_load_buffer(const uint8_t * data, size_t length, audio_file ** output);
+int EMSCRIPTEN_KEEPALIVE op1_sample_load_buffer(const uint8_t * data, size_t length, audio_file ** output);
 
 /**
  * Destroy a sample previously loaded with `op1_sample_load`.
@@ -114,7 +118,7 @@ int op1_sample_load_buffer(const uint8_t * data, size_t length, audio_file ** ou
  *
  * @returns an error code in case of error, OP1_SUCCESS otherwise.
  */
-int op1_sample_destroy(audio_file * sample);
+int EMSCRIPTEN_KEEPALIVE op1_sample_destroy(audio_file * sample);
 
 /**
  * Get raw data, as a buffer of int16_t representing the mono file.
@@ -125,7 +129,7 @@ int op1_sample_destroy(audio_file * sample);
  *
  * @returns an error code in case of error, OP1_SUCCESS otherwise.
  */
-int op1_sample_get_data(audio_file * sample, int16_t ** data, size_t * frame_count);
+int EMSCRIPTEN_KEEPALIVE op1_sample_get_data(audio_file * sample, int16_t ** data, size_t * frame_count);
 
 /**
  * Get the sample-rate of the file.
@@ -135,7 +139,7 @@ int op1_sample_get_data(audio_file * sample, int16_t ** data, size_t * frame_cou
  *
  * @returns an error code in case of error, OP1_SUCCESS otherwise.
  */
-int op1_sample_get_rate(audio_file * sample, int * rate);
+int EMSCRIPTEN_KEEPALIVE op1_sample_get_rate(audio_file * sample, int * rate);
 /**
  * Get the length, in samples, of this file.
  *
@@ -144,7 +148,7 @@ int op1_sample_get_rate(audio_file * sample, int * rate);
  *
  * @returns an error code in case of error, OP1_SUCCESS otherwise.
  */
-int op1_sample_get_length(audio_file * sample, size_t * frame_count);
+int EMSCRIPTEN_KEEPALIVE op1_sample_get_length(audio_file * sample, size_t * frame_count);
 
 /** Initialize a new `op1_drum` context.
  *
@@ -152,7 +156,7 @@ int op1_sample_get_length(audio_file * sample, size_t * frame_count);
  *
  * @returns an error code in case of error, OP1_SUCCESS otherwise.
  */
-int op1_drum_init(op1_drum ** ctx);
+int EMSCRIPTEN_KEEPALIVE op1_drum_init(op1_drum ** ctx);
 
 /** Destroys an `op1_drum` context.
  *
@@ -160,7 +164,7 @@ int op1_drum_init(op1_drum ** ctx);
  *
  * @returns an error code in case of error, OP1_SUCCESS otherwise.
  */
-int op1_drum_destroy(op1_drum * ctx);
+int EMSCRIPTEN_KEEPALIVE op1_drum_destroy(op1_drum * ctx);
 
 /** Write the final audio file to disk. If any of `op1_drum_set_start_times` or
  * `op1_drum_set_end_times` have been called with array that are not all zeros,
@@ -172,7 +176,7 @@ int op1_drum_destroy(op1_drum * ctx);
  *
  * @returns an error code in case of error, OP1_SUCCESS otherwise.
  */
-int op1_drum_write(op1_drum * ctx, const char * file_name);
+int EMSCRIPTEN_KEEPALIVE op1_drum_write(op1_drum * ctx, const char * file_name);
 
 /** Write the final audio file to a buffer. If any of `op1_drum_set_start_times`
  * or `op1_drum_set_end_times` have been called with array that are not all
@@ -185,7 +189,7 @@ int op1_drum_write(op1_drum * ctx, const char * file_name);
  *
  * @returns an error code in case of error, OP1_SUCCESS otherwise.
  */
-int op1_drum_write_buffer(op1_drum * ctx, uint8_t ** output, size_t * length);
+int EMSCRIPTEN_KEEPALIVE op1_drum_write_buffer(op1_drum * ctx, uint8_t ** output, size_t * length);
 
 /** Add a sample to an `op1_drum` context.
  *
@@ -196,7 +200,7 @@ int op1_drum_write_buffer(op1_drum * ctx, uint8_t ** output, size_t * length);
  *
  * @returns an error code in case of error, OP1_SUCCESS otherwise.
  */
-int op1_drum_add_sample(op1_drum * ctx, audio_file * file);
+int EMSCRIPTEN_KEEPALIVE op1_drum_add_sample(op1_drum * ctx, audio_file * file);
 /**
  * Set the effect to be used for this drum sample.
  *
@@ -206,7 +210,7 @@ int op1_drum_add_sample(op1_drum * ctx, audio_file * file);
  *
  * @returns an error code in case of error, OP1_SUCCESS otherwise.
  */
-int op1_drum_set_fx(op1_drum * ctx, const char * fx);
+int EMSCRIPTEN_KEEPALIVE op1_drum_set_fx(op1_drum * ctx, const char * fx);
 
 /**
  * Set wether the effect is active by default.
@@ -216,7 +220,7 @@ int op1_drum_set_fx(op1_drum * ctx, const char * fx);
  *
  * @returns an error code in case of error, OP1_SUCCESS otherwise.
  */
-int op1_drum_set_fx_active(op1_drum * ctx, int active);
+int EMSCRIPTEN_KEEPALIVE op1_drum_set_fx_active(op1_drum * ctx, int active);
 
 /**
  * Set the effect parameters, as a array of 8 integers.
@@ -226,7 +230,7 @@ int op1_drum_set_fx_active(op1_drum * ctx, int active);
  *
  * @returns an error code in case of error, OP1_SUCCESS otherwise.
  */
-int op1_drum_set_fx_params(op1_drum * ctx, int params[8]);
+int EMSCRIPTEN_KEEPALIVE op1_drum_set_fx_params(op1_drum * ctx, int params[8]);
 
 /**
  * Set the LFO type to be used for this drum sample.
@@ -237,7 +241,7 @@ int op1_drum_set_fx_params(op1_drum * ctx, int params[8]);
  *
  * @returns an error code in case of error, OP1_SUCCESS otherwise.
  */
-int op1_drum_set_lfo(op1_drum * ctx, const char * fx);
+int EMSCRIPTEN_KEEPALIVE op1_drum_set_lfo(op1_drum * ctx, const char * fx);
 
 /**
  * Set wether the LFO is active by default.
@@ -247,7 +251,7 @@ int op1_drum_set_lfo(op1_drum * ctx, const char * fx);
  *
  * @returns an error code in case of error, OP1_SUCCESS otherwise.
  */
-int op1_drum_set_lfo_active(op1_drum * ctx, int active);
+int EMSCRIPTEN_KEEPALIVE op1_drum_set_lfo_active(op1_drum * ctx, int active);
 
 /**
  * Set the LFO parameters, as a array of 8 integers.
@@ -257,7 +261,7 @@ int op1_drum_set_lfo_active(op1_drum * ctx, int active);
  *
  * @returns an error code in case of error, OP1_SUCCESS otherwise.
  */
-int op1_drum_set_lfo_params(op1_drum * ctx, int params[8]);
+int EMSCRIPTEN_KEEPALIVE op1_drum_set_lfo_params(op1_drum * ctx, int params[8]);
 
 /**
  * Set the play-mode for each samples.
@@ -270,7 +274,7 @@ int op1_drum_set_lfo_params(op1_drum * ctx, int params[8]);
  *
  * @returns an error code in case of error, OP1_SUCCESS otherwise.
  */
-int op1_drum_set_playmode(op1_drum * ctx, int params[24]);
+int EMSCRIPTEN_KEEPALIVE op1_drum_set_playmode(op1_drum * ctx, int params[24]);
 
 /**
  * Set the playback direction for each samples.
@@ -283,7 +287,7 @@ int op1_drum_set_playmode(op1_drum * ctx, int params[24]);
  *
  * @returns an error code in case of error, OP1_SUCCESS otherwise.
  */
-int op1_drum_set_playback_direction(op1_drum * ctx, int params[24]);
+int EMSCRIPTEN_KEEPALIVE op1_drum_set_playback_direction(op1_drum * ctx, int params[24]);
 
 /**
  * Set the enveloppe for this drum sample.
@@ -293,7 +297,7 @@ int op1_drum_set_playback_direction(op1_drum * ctx, int params[24]);
  *
  * @returns an error code in case of error, OP1_SUCCESS otherwise.
  */
-int op1_drum_set_enveloppe(op1_drum * ctx, int enveloppe[8]);
+int EMSCRIPTEN_KEEPALIVE op1_drum_set_enveloppe(op1_drum * ctx, int enveloppe[8]);
 
 /**
  * Set the pitches for each samples.
@@ -304,7 +308,7 @@ int op1_drum_set_enveloppe(op1_drum * ctx, int enveloppe[8]);
  *
  * @returns an error code in case of error, OP1_SUCCESS otherwise.
  */
-int op1_drum_set_pitches(op1_drum * ctx, int pitches[24]);
+int EMSCRIPTEN_KEEPALIVE op1_drum_set_pitches(op1_drum * ctx, int pitches[24]);
 
 /**
  * Set the volume for each samples.
@@ -315,7 +319,7 @@ int op1_drum_set_pitches(op1_drum * ctx, int pitches[24]);
  *
  * @returns an error code in case of error, OP1_SUCCESS otherwise.
  */
-int op1_drum_set_volumes(op1_drum * ctx, int volumes[24]);
+int EMSCRIPTEN_KEEPALIVE op1_drum_set_volumes(op1_drum * ctx, int volumes[24]);
 
 /**
  * Set the start time for each samples.
@@ -325,7 +329,7 @@ int op1_drum_set_volumes(op1_drum * ctx, int volumes[24]);
  *
  * @returns an error code in case of error, OP1_SUCCESS otherwise.
  */
-int op1_drum_set_start_times(op1_drum * ctx, int start_times[24]);
+int EMSCRIPTEN_KEEPALIVE op1_drum_set_start_times(op1_drum * ctx, int start_times[24]);
 
 /**
  * Set the end time for each samples.
@@ -335,7 +339,7 @@ int op1_drum_set_start_times(op1_drum * ctx, int start_times[24]);
  *
  * @returns an error code in case of error, OP1_SUCCESS otherwise.
  */
-int op1_drum_set_end_times(op1_drum * ctx, int end_times[24]);
+int EMSCRIPTEN_KEEPALIVE op1_drum_set_end_times(op1_drum * ctx, int end_times[24]);
 
 #ifdef __cplusplus
 }

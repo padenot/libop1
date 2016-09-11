@@ -40,7 +40,7 @@ void PodZero(T blob)
 }
 
 
-template<typename T, unsigned long S>
+template<typename T, size_t S>
 void ArrayCopy(std::array<T, S> lhs, T rhs[S])
 {
   for (size_t i = 0; i < S; i++) {

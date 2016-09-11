@@ -105,6 +105,8 @@ struct op1_drum
     playmode.fill(OP1_PLAYMODE_ONE_SHOT);
     start_times.fill(0);
     volumes.fill(OP1_VOLUME_FLAT);
+    fx_type = "cwo";
+    lfo_type = "element";
   }
 
   vector<audio_file> audio_samples;
@@ -172,7 +174,7 @@ int op1_sample_load(const char * file_name, audio_file ** sample)
   return OP1_SUCCESS;
 }
 
-int op1_sample_load_buffer(uint8_t * data, size_t length, audio_file ** sample)
+int op1_sample_load_buffer(const uint8_t * data, size_t length, audio_file ** sample)
 {
   SF_INFO info;
 
