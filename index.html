@@ -1,0 +1,163 @@
+<script>
+var Module = {};
+Module.TOTAL_MEMORY = 64 * 1024 * 1024;
+</script>
+<script src=libop1.js></script>
+<input type=file multiple>
+<script>
+function op1web_sample_load_buffer(typedArray) {
+  var pointer_to_sample_pointer = Module._malloc(4);
+
+  var buf = Module._malloc(typedArray.length*typedArray.BYTES_PER_ELEMENT);
+  Module.HEAPU8.set(typedArray, buf);
+
+  var rv = Module.ccall('op1_sample_load_buffer',
+      'number',
+      ['number', 'number', 'number'],
+      [buf, typedArray.length, pointer_to_sample_pointer]);
+
+  if (rv != 0) {
+    console.log("Could not decode file.");
+    return rv;
+  }
+
+  Module._free(buf);
+
+  return Module.getValue(pointer_to_sample_pointer, '*');
+}
+
+function op1web_sample_get_rate(sample_pointer) {
+  var samplerate_pointer = Module._malloc(4);
+
+  rv = Module.ccall('op1_sample_get_rate',
+      'number',
+      ['number', 'number'],
+      [sample_pointer, samplerate_pointer]);
+
+  if (rv != 0) {
+    console.log("Could not get samplerate.");
+    return rv;
+  }
+  return Module.getValue(samplerate_pointer, 'i32*');
+}
+
+function op1web_drum_init() {
+  var drum_init_pointer_pointer = Module._malloc(4);
+
+  rv = Module.ccall('op1_drum_init',
+      'number',
+      ['number'],
+      [drum_init_pointer_pointer]);
+
+  if (rv != 0) {
+    console.log("could not create drum ctx");
+    return rv;
+  }
+
+  return Module.getValue(drum_init_pointer_pointer, '*');
+}
+
+function op1web_drum_destroy(drum_ctx) {
+  rv = Module.ccall('op1_drum_destroy',
+      'number',
+      ['number'],
+      [drum_ctx]);
+
+  if (rv != 0) {
+    console.log("could not destroy drum context");
+  }
+
+  return rv;
+}
+
+function op1web_drum_add_sample(drum_ctx, sample) {
+  rv = Module.ccall('op1_drum_add_sample',
+      'number',
+      ['number', 'number'],
+      [drum_ctx, sample]);
+
+  if (rv != 0) {
+    console.log("could not add sample to context");
+  }
+
+  return rv;
+}
+
+function op1web_drum_write_buffer(drum_ctx) {
+  var uint8_ptr_ptr = Module._malloc(4);
+  var length_ptr = Module._malloc(4);
+
+  rv = Module.ccall('op1_drum_write_buffer',
+                    'number',
+                    ['number', 'number', 'number'],
+                    [drum_ctx, uint8_ptr_ptr, length_ptr]);
+
+  if (rv != 0) {
+    console.log("Could not render buffer.");
+  }
+
+  length = Module.getValue(length_ptr, 'i32*');
+  uint8_ptr = Module.getValue(uint8_ptr_ptr, 'u8*');
+
+  console.log("length:" + length); 
+
+  return Module.HEAP8.subarray(uint8_ptr, uint8_ptr + length);
+}
+
+function init() {
+  drum_ctx = op1web_drum_init();
+
+  if (drum_ctx < 0)  {
+    console.log("Could not create drum ctx.");
+    return 0;
+  }
+}
+
+var samples = [];
+
+init();
+
+function decodeAndRender() {
+  samples.forEach(function(sample) {
+    var sample_pointer = op1web_sample_load_buffer(sample);
+    console.log(op1web_sample_get_rate(sample_pointer));
+
+    rv = op1web_drum_add_sample(drum_ctx, sample_pointer);
+    if (rv != 0) {
+      console.log("Could not add sample to context");
+    }
+  });
+
+  var result = op1web_drum_write_buffer(drum_ctx);
+
+  var blob = new Blob([result]);
+  var url = window.URL.createObjectURL(blob);
+
+  var a = document.createElement("a");
+  a.href = url;
+  a.download = "drum.aif";
+  a.style.display = "none";
+  document.body.appendChild(a);
+
+  a.click();
+}
+
+var input = document.querySelector("input"); 
+input.onchange = function(e) {
+  console.log(e.target.files);
+  fr = new FileReader();
+  var count = e.target.files.length;
+  for (var i = 0; i < count; i++) {
+    fr.readAsArrayBuffer(e.target.files[i]);
+    fr.onload = function(e) {
+      console.log(e.target.result);
+      samples.push(new Uint8Array(e.target.result));
+      count--;
+
+      if (count == 0) {
+        decodeAndRender();
+      }
+    }
+  }
+}
+</script>
