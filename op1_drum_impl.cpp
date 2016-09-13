@@ -129,7 +129,7 @@ struct op1_drum
 };
 
 namespace {
-uint32_t frame_to_op1_time(uint32_t frame)
+uint64_t frame_to_op1_time(uint64_t frame)
 {
   // Maximum amount of data for a drum sample on an op-1
   const int BYTES_IN_12_SECS = 44100 * 2 * 12;
@@ -291,8 +291,8 @@ int op1_drum_write_buffer(op1_drum * ctx, uint8_t ** output, size_t * length)
   ENSURE_VALID(output);
   ENSURE_VALID(length);
 
-  std::array<int, 24> converted_start;
-  std::array<int, 24> converted_end;
+  std::array<uint64_t, 24> converted_start;
+  std::array<uint64_t, 24> converted_end;
 
   bool start_or_end_arrays_set = false;
 
@@ -319,8 +319,10 @@ int op1_drum_write_buffer(op1_drum * ctx, uint8_t ** output, size_t * length)
       converted_end[i] = converted_end[ctx->audio_samples.size() - 1];
     }
   } else {
-    converted_start = ctx->start_times;
-    converted_end = ctx->end_times;
+    for (uint32_t i = 0; i < 24; i++) {
+      converted_start[i] = ctx->start_times[i];
+      converted_end[i] = ctx->end_times[i];
+    }
   }
 
   for (uint32_t i = 0; i < 24; i++) {
