@@ -1,5 +1,7 @@
+<meta charset=utf-8>
 <script>
 var Module = {};
+// 64MB is ought to be enough for anybody
 Module.TOTAL_MEMORY = 64 * 1024 * 1024;
 </script>
 <script src=libop1.js></script>
@@ -22,6 +24,7 @@ function op1web_sample_load_buffer(typedArray) {
   }
 
   Module._free(buf);
+  // TODO why can't we `free pointer_to_sample_pointer` ?
 
   return Module.getValue(pointer_to_sample_pointer, '*');
 }
