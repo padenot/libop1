@@ -8,12 +8,15 @@ SET( CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -std=c++11" )
 project (op1-utils)
 
 include_directories(./external/include/)
+include_directories(./include/)
+include_directories(./vendor/)
+include_directories(./src/)
 link_directories(./external/lib/)
 
-add_library(op1 op1_drum_impl.cpp)
+add_library(op1 src/op1_drum_impl.cpp)
 
-add_executable(op1-dump op1-dump.cpp)
-add_executable(op1-drum op1-drum.cpp)
+add_executable(op1-dump src/op1-dump.cpp)
+add_executable(op1-drum src/op1-drum.cpp)
 
 target_link_libraries (op1-drum op1)
 target_link_libraries (op1-drum -lsndfile)

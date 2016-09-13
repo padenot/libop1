@@ -1,6 +1,6 @@
 #!/bin/sh
 
-functions=(`grep 'int EM' op1.h | cut -d ' ' -f3 | cut -d '(' -f1`)
+functions=(`grep 'int EM' include/op1.h | cut -d ' ' -f3 | cut -d '(' -f1`)
 
 /bin/echo -n "["
 /bin/echo -n "\"_"
