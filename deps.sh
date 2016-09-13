@@ -1,5 +1,8 @@
 #!/bin/sh
 
+# Get the modified libsndfile sources, compile them and install them at the
+# proper location
+
 set -ex
 
 if [ ! -d libsndfile ]

@@ -1,5 +1,7 @@
 #!/bin/sh
 
+# Generate the docs and push them to the github page.
+
 make doc
 rsync --delete -r doc/html/* dist
 git add dist

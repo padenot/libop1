@@ -1,5 +1,7 @@
 #!/bin/sh -x
 
+# Install a specific version of scanbuild for OSX
+
 CLANG_CHECKER_NAME=checker-278
 
 cd ~
