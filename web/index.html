@@ -1,10 +1,29 @@
-<meta charset=utf-8>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- The above 3 meta tags *must* come first in the head; any
+              other head content must come *after* these tags -->
+<title>OP-1 Web</title>
+
+<link rel=stylesheet href=style.css>
+
 <script>
 var Module = {};
 // 64MB is ought to be enough for anybody
 Module.TOTAL_MEMORY = 64 * 1024 * 1024;
 </script>
-<script src=libop1.js></script>
-<input type=file multiple>
-<script>
-</script>
+
+
+</head>
+<body>
+<div class="container">
+<input type="file" multiple id=sample-input></input>
+</div>
+<script src="script.js"></script>
+<script src="libop1.js"></script>
+<script src="op1web-glue.js"></script>
+</body>
+</html>

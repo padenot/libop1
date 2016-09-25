@@ -1,0 +1,79 @@
+.hover {
+  filter: brightness(20%);
+}
+  @media (min-width: 48em) {
+    .container {
+        max-width: 46rem;
+      }
+  }
+  .container-narrow > hr {
+    margin: 2rem 0;
+  }
+  /* Responsive: Portrait tablets and up */
+  @media screen and (min-width: 48em) {
+    /* Remove the padding we set earlier */
+    .header,
+    .footer {
+        padding-right: 0;
+        padding-left: 0;
+      }
+    /* Space out the masthead */
+    .header {
+        margin-bottom: 2rem;
+      }
+  }
+
+  .container {
+    display: block;
+    padding: 2em;
+    margin: 0 auto;
+    width: 90%;
+    box-shadow: 0em 0em 1em gray;
+  }
+
+  .sample {
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    align-items: flex-start;
+    align-content: flex-start;
+    width: auto;
+    margin: 0.5em 0;
+  }
+
+  canvas {
+    position: absolute;
+  }
+
+  .flat {
+    appearance: none;
+    margin: 0 1em;
+    align-self: center;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background: transparent;
+    box-shadow: 0em 0em 0.5em gray;
+    border: none;
+  }
+
+
+  .cvs-wrap {
+    box-shadow: 0em 0em 0.5em gray;
+    background: #fff;
+    display: inline-block;
+    flex: 10;
+    margin: 0.3em auto;
+    position: relative;
+    margin: 0;
+    padding: 0;
+    height: 40px;
+  }
+  .sample-name {
+    position: absolute;
+    top: 0;
+    left: 0;
+    font-size: 0.7em;
+    font-family: courier;
+    background-color: rgba(255, 255, 255, 0.4);
+  }
