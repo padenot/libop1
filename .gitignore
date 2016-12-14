@@ -2,7 +2,6 @@
 *.a
 *.aif
 *.bc
-*.js
 .DS_Store
 CMakeCache.txt
 CMakeFiles/
